@@ -1,17 +1,28 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"log"
-	"math"
-	"os"
-	"slices"
-	"strconv"
-	"strings"
+    "bufio"
+    "fmt"
+    "log"
+    "math"
+    "os"
+    "runtime/pprof"
+    "slices"
+    "strconv"
+    "strings"
 )
 
 func main() {
+    // Start CPU profiling
+    if len(os.Args) > 2 && os.Args[2] == "cpu" {
+        f, err := os.Create("cpu.pprof")
+        if err != nil {
+            panic(err)
+        } 
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
+    }
+
     var measurementsPath string
     if len(os.Args) > 1 {
         measurementsPath = os.Args[1]
@@ -31,7 +42,6 @@ func calculate(filePath string) (string, error) {
         return "", err 
     }
     defer os.Close()
-
 
     scanner := bufio.NewScanner(os)
 
