@@ -45,27 +45,28 @@ func calculate(filePath string) (string, error) {
 
     scanner := bufio.NewScanner(os)
 
-    stationMap := make(map[string]Station)
+    stationMap := make(map[string]StationAggregate)
 
     for scanner.Scan() {
-        stationName, temperature, err := ParseTextToStation(scanner.Text())
+        station := ParseTextToStation(scanner.Text())
         if err != nil {
             return  "", err
         }
-        if val, exists := stationMap[stationName]; exists {
-            val.Sum += temperature
+        if val, exists := stationMap[station.Name]; exists {
+            val.Sum += station.Temperature
             val.Count += 1
-            if temperature < val.Min {
-                val.Min = temperature
+            if station.Temperature < val.Min {
+                val.Min = station.Temperature
             }
-            if temperature > val.Max {
-                val.Max = temperature
+            if station.Temperature > val.Max {
+                val.Max = station.Temperature
             }
-            stationMap[stationName] = val
+            stationMap[station.Name] = val
 
             continue
         }
-        stationMap[stationName] = Station{stationName, temperature, temperature, temperature, 1}
+        stationMap[station.Name] = StationAggregate{station.Name, 
+        station.Temperature, station.Temperature, station.Temperature, 1}
     }
 
     keys := make([]string, 0, len(stationMap))
@@ -79,20 +80,21 @@ func calculate(filePath string) (string, error) {
     sb.WriteString("{")
     for _, k := range keys {
         station := stationMap[k]
-        sb.WriteString(fmt.Sprintf("%s=%.1f/%.1f/%.1f, ", station.Name, station.Min, round(float64(station.Sum / station.Count)), station.Max))
+        sb.WriteString(fmt.Sprintf("%s=%.1f/%.1f/%.1f, ", station.Name, 
+        station.Min, round(float64(station.Sum / station.Count)), station.Max))
     }
     sb.WriteString("}")
     finalResult := sb.String()[:sb.Len()-3] + "}"
     return finalResult, nil
 }
 
-func ParseTextToStation(text string) (station string, temperature float64, err error) {
+func ParseTextToStation(text string) Station {
     splitted := strings.Split(text, ";")
     temp, err := strconv.ParseFloat(splitted[1], 64)
     if err != nil {
-        return "", 0, nil
+        return Station{}
     }
-    return splitted[0], float64(temp), nil
+    return Station{splitted[0], temp}
 }
 
 
@@ -104,11 +106,15 @@ func round(x float64) float64 {
 }
 
 // Create a struct that contains name station and min max values
-type Station struct {
+type StationAggregate struct {
     Name string
     Min  float64
     Max  float64
     Sum  float64
     Count float64
 }
-//
+
+type Station struct {
+    Name string
+    Temperature float64
+}
